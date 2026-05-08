@@ -1,0 +1,16 @@
+{
+  "name": "@angehlang/text",
+  "version": "9.1.0",
+  "description": "text Studio Package",
+  "main": "index.ts",
+  "types": "types/index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./components": "./components/index.ts",
+    "./engines": "./engines/index.ts",
+    "./hooks": "./hooks/index.ts"
+  },
+  "dependencies": {
+    "@angehlang/shared": "^9.1.0"
+  }
+}

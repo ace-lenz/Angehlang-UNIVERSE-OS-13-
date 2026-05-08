@@ -1,0 +1,19 @@
+{
+  "name": "@angehlang/shared",
+  "version": "9.1.0",
+  "description": "Shared utilities and QPPU integration for Angehlang Universe OS",
+  "main": "index.ts",
+  "types": "types/index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./qppu": "./qppu/index.ts",
+    "./storage": "./storage/index.ts",
+    "./types": "./types/index.ts"
+  },
+  "dependencies": {
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0"
+  }
+}
