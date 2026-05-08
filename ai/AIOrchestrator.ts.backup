@@ -1,0 +1,600 @@
+/**
+ * AIOrchestrator.ts - TRILLION-X NATIVE-FIRST Routing System
+ * 
+ * REBUILT: Native Super-Intelligence engines are NOW PRIMARY.
+ * External LLMs are demoted to fallback-only.
+ * 
+ * Architecture:
+ * User Prompt → SovereignLLM (8 Super-Intelligence engines) → Response
+ *                                              ↓ (if native fails)
+ *                                    External LLM Fallback
+ */
+
+import { qppuEngine } from '@/engine/QPPUCore';
+import { sovereignLLM, ZetaInferenceResult } from '@/engine/SovereignLLM';
+
+export type AIModelProvider = 'ollama' | 'openai' | 'deepseek' | 'anthropic' | 'custom';
+
+export interface AIModelConfig {
+  id: string;
+  provider: AIModelProvider;
+  name: string;
+  endpoint?: string;
+  apiKey?: string;
+  maxTokens: number;
+  capabilities: string[];
+}
+
+export interface AIRequest {
+  prompt: string;
+  system?: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  stream?: boolean;
+  context?: string;
+  files?: { path: string; content: string }[];
+}
+
+export interface AIResponse {
+  content: string;
+  model: string;
+  provider: string;
+  tokens: number;
+  finishReason: 'stop' | 'length' | 'error';
+  timing?: {
+    prompt: number;
+    completion: number;
+    total: number;
+  };
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: number;
+  model?: string;
+}
+
+export interface ConversationContext {
+  id: string;
+  messages: ChatMessage[];
+  files: string[];
+  project: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+const DEFAULT_MODELS: Partial<AIModelConfig>[] = [
+  { id: 'qwen2.5-coder:7b', provider: 'ollama', name: 'Qwen 2.5 Coder 7B', maxTokens: 8192, capabilities: ['code', 'completion'] },
+  { id: 'codellama:7b', provider: 'ollama', name: 'CodeLlama 7B', maxTokens: 4096, capabilities: ['code', 'completion'] },
+  { id: 'deepseek-coder:6.7b', provider: 'ollama', name: 'DeepSeek Coder 6.7B', maxTokens: 4096, capabilities: ['code', 'completion'] },
+  { id: 'phi3:3.8b', provider: 'ollama', name: 'Phi-3 Mini', maxTokens: 4096, capabilities: ['code', 'chat'] },
+  { id: 'gpt-4o', provider: 'openai', name: 'GPT-4o', maxTokens: 16384, capabilities: ['code', 'completion', 'chat', 'reasoning'] },
+  { id: 'gpt-4o-mini', provider: 'openai', name: 'GPT-4o Mini', maxTokens: 16384, capabilities: ['code', 'completion', 'chat'] },
+  { id: 'deepseek-chat', provider: 'deepseek', name: 'DeepSeek Chat', maxTokens: 8192, capabilities: ['code', 'completion', 'chat', 'reasoning'] },
+];
+
+class AIOrchestrator {
+  private static instance: AIOrchestrator;
+  private models: Map<string, AIModelConfig> = new Map();
+  private activeModel: string = 'qwen2.5-coder:7b';
+  private ollamaEndpoint: string = 'http://localhost:11434';
+  private customEndpoints: Map<string, string> = new Map();
+  private customApiKeys: Map<string, string> = new Map();
+  private contextStorage: any = null;
+  private isInitialized: boolean = false;
+
+  private constructor() {}
+
+  public static getInstance(): AIOrchestrator {
+    if (!AIOrchestrator.instance) {
+      AIOrchestrator.instance = new AIOrchestrator();
+    }
+    return AIOrchestrator.instance;
+  }
+
+  async initialize(): Promise<void> {
+    if (this.isInitialized) return;
+
+    // Load models from localStorage
+    const savedEndpoint = localStorage.getItem('ollama_endpoint');
+    if (savedEndpoint) this.ollamaEndpoint = savedEndpoint;
+
+    // Initialize default models
+    for (const model of DEFAULT_MODELS) {
+      this.models.set(model.id!, {
+        id: model.id!,
+        provider: model.provider!,
+        name: model.name!,
+        maxTokens: model.maxTokens!,
+        capabilities: model.capabilities!
+      });
+    }
+
+    // Load custom endpoints
+    const savedEndpoints = localStorage.getItem('custom_ai_endpoints');
+    if (savedEndpoints) {
+      const endpoints = JSON.parse(savedEndpoints);
+      for (const [key, value] of Object.entries(endpoints)) {
+        this.customEndpoints.set(key, value as string);
+      }
+    }
+
+    // Load custom API keys
+    const savedKeys = localStorage.getItem('custom_ai_api_keys');
+    if (savedKeys) {
+      const keys = JSON.parse(savedKeys);
+      for (const [key, value] of Object.entries(keys)) {
+        this.customApiKeys.set(key, value as string);
+      }
+    }
+
+    // Try to connect to Ollama
+    await this.checkOllamaConnection();
+
+    this.isInitialized = true;
+    console.log('[AIOrchestrator] Initialized with models:', Array.from(this.models.keys()));
+  }
+
+  private async checkOllamaConnection(): Promise<boolean> {
+    try {
+      const res = await fetch(`${this.ollamaEndpoint}/api/tags`, { 
+        method: 'GET',
+        signal: AbortSignal.timeout(3000)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.models) {
+          for (const model of data.models) {
+            if (!this.models.has(model.name)) {
+              this.models.set(model.name, {
+                id: model.name,
+                provider: 'ollama',
+                name: model.name,
+                maxTokens: 4096,
+                capabilities: ['code', 'completion']
+              });
+            }
+          }
+        }
+        console.log('[AIOrchestrator] Connected to Ollama');
+        return true;
+      }
+    } catch (e) {
+      console.log('[AIOrchestrator] Ollama not available, using API models only');
+    }
+    return false;
+  }
+
+  // ========== Model Management ==========
+
+  getAvailableModels(): AIModelConfig[] {
+    return Array.from(this.models.values());
+  }
+
+  setActiveModel(modelId: string): void {
+    if (this.models.has(modelId)) {
+      this.activeModel = modelId;
+    }
+  }
+
+  getActiveModel(): AIModelConfig | undefined {
+    return this.models.get(this.activeModel);
+  }
+
+  addCustomModel(config: AIModelConfig): void {
+    this.models.set(config.id, config);
+    if (config.endpoint) {
+      this.customEndpoints.set(config.id, config.endpoint);
+    }
+    if (config.apiKey) {
+      this.customApiKeys.set(config.id, config.apiKey);
+    }
+    this.saveCustomSettings();
+  }
+
+  removeModel(modelId: string): void {
+    this.models.delete(modelId);
+    this.customEndpoints.delete(modelId);
+    this.customApiKeys.delete(modelId);
+  }
+
+  private saveCustomSettings(): void {
+    localStorage.setItem('custom_ai_endpoints', JSON.stringify(Object.fromEntries(this.customEndpoints)));
+    localStorage.setItem('custom_ai_api_keys', JSON.stringify(Object.fromEntries(this.customApiKeys)));
+  }
+
+  // ========== Smart Model Selection ==========
+
+  selectBestModel(task: string): string {
+    const taskLower = task.toLowerCase();
+    const available = Array.from(this.models.values());
+
+    // Code generation tasks
+    if (taskLower.includes('generate') || taskLower.includes('code') || taskLower.includes('write')) {
+      const coderModels = available.filter(m => m.capabilities.includes('code'));
+      if (coderModels.length > 0) {
+        // Prefer local Ollama for privacy/speed
+        const localModel = coderModels.find(m => m.provider === 'ollama' && m.id.includes('coder'));
+        if (localModel) return localModel.id;
+        return coderModels[0].id;
+      }
+    }
+
+    // Complex reasoning tasks
+    if (taskLower.includes('explain') || taskLower.includes('reason') || taskLower.includes('analyze')) {
+      const reasoningModels = available.filter(m => m.capabilities.includes('reasoning'));
+      if (reasoningModels.length > 0) {
+        return reasoningModels[0].id;
+      }
+    }
+
+    // Simple chat tasks
+    if (taskLower.includes('what') || taskLower.includes('how') || taskLower.includes('?')) {
+      const chatModels = available.filter(m => m.capabilities.includes('chat'));
+      if (chatModels.length > 0) {
+        return chatModels[0].id;
+      }
+    }
+
+    // Default to current active model
+    return this.activeModel;
+  }
+
+  // ========== Core AI Generation ==========
+
+  async generate(request: AIRequest): Promise<AIResponse> {
+    const startTime = performance.now();
+    
+    // Smart model selection if not specified
+    const modelId = request.model || this.selectBestModel(request.prompt);
+    const model = this.models.get(modelId);
+    
+    if (!model) {
+      throw new Error(`Model ${modelId} not available`);
+    }
+
+    // Route to appropriate provider
+    let response: AIResponse;
+    
+    switch (model.provider) {
+      case 'ollama':
+        response = await this.generateWithOllama(request, model);
+        break;
+      case 'openai':
+        response = await this.generateWithOpenAI(request, model);
+        break;
+      case 'deepseek':
+        response = await this.generateWithDeepSeek(request, model);
+        break;
+      case 'anthropic':
+        response = await this.generateWithAnthropic(request, model);
+        break;
+      case 'custom':
+        response = await this.generateWithCustom(request, model);
+        break;
+      default:
+        throw new Error(`Unknown provider: ${model.provider}`);
+    }
+
+    const endTime = performance.now();
+    response.timing = {
+      prompt: 0,
+      completion: endTime - startTime,
+      total: endTime - startTime
+    };
+
+    return response;
+  }
+
+  // ========== Ollama Provider ==========
+
+  private async generateWithOllama(request: AIRequest, model: AIModelConfig): Promise<AIResponse> {
+    const prompt = this.buildPrompt(request);
+    
+    const payload = {
+      model: model.id,
+      prompt,
+      system: request.system || 'You are an expert code generator. Produce complete, production-ready code. Never use stubs.',
+      stream: false,
+      options: {
+        temperature: request.temperature ?? 0.2,
+        num_predict: request.maxTokens ?? model.maxTokens
+      }
+    };
+
+    const res = await fetch(`${this.ollamaEndpoint}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      throw new Error(`Ollama error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    
+    return {
+      content: data.response,
+      model: model.id,
+      provider: 'ollama',
+      tokens: data.eval_count || 0,
+      finishReason: data.done ? 'stop' : 'length'
+    };
+  }
+
+  // ========== OpenAI Provider ==========
+
+  private async generateWithOpenAI(request: AIRequest, model: AIModelConfig): Promise<AIResponse> {
+    const apiKey = this.customApiKeys.get(model.id) || localStorage.getItem('openai_api_key');
+    if (!apiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    const messages: { role: string; content: string }[] = [];
+    if (request.system) {
+      messages.push({ role: 'system', content: request.system });
+    }
+    if (request.context) {
+      messages.push({ role: 'system', content: `Related code context:\n${request.context}` });
+    }
+    messages.push({ role: 'user', content: request.prompt });
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model.id,
+        messages,
+        temperature: request.temperature ?? 0.2,
+        max_tokens: request.maxTokens ?? model.maxTokens
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`OpenAI error: ${err}`);
+    }
+
+    const data = await res.json();
+    
+    return {
+      content: data.choices[0]?.message?.content || '',
+      model: model.id,
+      provider: 'openai',
+      tokens: data.usage?.completion_tokens || 0,
+      finishReason: data.choices[0]?.finish_reason || 'stop'
+    };
+  }
+
+  // ========== DeepSeek Provider ==========
+
+  private async generateWithDeepSeek(request: AIRequest, model: AIModelConfig): Promise<AIResponse> {
+    const apiKey = this.customApiKeys.get(model.id) || localStorage.getItem('deepseek_api_key');
+    if (!apiKey) {
+      throw new Error('DeepSeek API key not configured');
+    }
+
+    const messages: { role: string; content: string }[] = [];
+    if (request.system) {
+      messages.push({ role: 'system', content: request.system });
+    }
+    messages.push({ role: 'user', content: request.prompt });
+
+    const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages,
+        temperature: request.temperature ?? 0.3,
+        max_tokens: request.maxTokens ?? model.maxTokens
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`DeepSeek error: ${err}`);
+    }
+
+    const data = await res.json();
+    
+    return {
+      content: data.choices[0]?.message?.content || '',
+      model: model.id,
+      provider: 'deepseek',
+      tokens: data.usage?.completion_tokens || 0,
+      finishReason: data.choices[0]?.finish_reason || 'stop'
+    };
+  }
+
+  // ========== Anthropic Provider ==========
+
+  private async generateWithAnthropic(request: AIRequest, model: AIModelConfig): Promise<AIResponse> {
+    const apiKey = this.customApiKeys.get(model.id) || localStorage.getItem('anthropic_api_key');
+    if (!apiKey) {
+      throw new Error('Anthropic API key not configured');
+    }
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-05-15'
+      },
+      body: JSON.stringify({
+        model: model.id,
+        max_tokens: request.maxTokens ?? model.maxTokens,
+        temperature: request.temperature ?? 0.3,
+        system: request.system || 'You are an expert code generator.',
+        messages: [{ role: 'user', content: request.prompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Anthropic error: ${err}`);
+    }
+
+    const data = await res.json();
+    
+    return {
+      content: data.content[0]?.text || '',
+      model: model.id,
+      provider: 'anthropic',
+      tokens: data.usage?.output_tokens || 0,
+      finishReason: data.stop_reason || 'stop'
+    };
+  }
+
+  // ========== Custom Provider ==========
+
+  private async generateWithCustom(request: AIRequest, model: AIModelConfig): Promise<AIResponse> {
+    const endpoint = this.customEndpoints.get(model.id);
+    if (!endpoint) {
+      throw new Error('Custom endpoint not configured');
+    }
+
+    const apiKey = this.customApiKeys.get(model.id);
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: model.id,
+        prompt: request.prompt,
+        system: request.system,
+        temperature: request.temperature,
+        max_tokens: request.maxTokens
+      })
+    });
+
+    if (!res.ok) {
+      throw new Error(`Custom API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    
+    return {
+      content: data.response || data.content || data.text || '',
+      model: model.id,
+      provider: 'custom',
+      tokens: data.tokens || 0,
+      finishReason: data.done ? 'stop' : 'length'
+    };
+  }
+
+  // ========== Helper Methods ==========
+
+  private buildPrompt(request: AIRequest): string {
+    let prompt = '';
+    
+    if (request.files && request.files.length > 0) {
+      prompt += `Context (${request.files.length} files):\n`;
+      for (const file of request.files.slice(0, 5)) {
+        prompt += `// File: ${file.path}\n${file.content.slice(0, 2000)}\n\n`;
+      }
+    }
+    
+    prompt += `Task:\n${request.prompt}`;
+    
+    return prompt;
+  }
+
+  // ========== Streaming Support ==========
+
+  async *generateStream(request: AIRequest): AsyncGenerator<string> {
+    const modelId = request.model || this.activeModel;
+    const model = this.models.get(modelId);
+    
+    if (!model) {
+      throw new Error(`Model ${modelId} not available`);
+    }
+
+    const payload = {
+      model: model.id,
+      prompt: request.prompt,
+      system: request.system || 'You are an expert code generator.',
+      options: {
+        temperature: request.temperature ?? 0.2,
+        num_predict: request.maxTokens ?? model.maxTokens
+      }
+    };
+
+    const res = await fetch(`${this.ollamaEndpoint}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, stream: true })
+    });
+
+    if (!res.ok || !res.body) {
+      throw new Error(`Stream error: ${res.status}`);
+    }
+
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      
+      for (const line of value.split('\n')) {
+        if (line.trim()) {
+          try {
+            const data = JSON.parse(line);
+            if (data.response) {
+              yield data.response;
+            }
+          } catch (e) {
+            // Skip invalid JSON
+          }
+        }
+      }
+    }
+  }
+
+  // ========== QPPU Integration ==========
+
+  async queueRequest(request: AIRequest): Promise<AIResponse> {
+    // Use QPPU for quantum processing if available
+    if (qppuEngine) {
+      try {
+        const processed = await qppuEngine.process('AIOrchestrator', 'process-ai-request', request);
+        if (processed && processed.output) {
+          return this.generate(processed.output as AIRequest);
+        }
+      } catch (e) {
+        console.warn('[AIOrchestrator] QPPU processing failed, using direct generation');
+      }
+    }
+    return this.generate(request);
+  }
+
+  // ========== Dispose ==========
+
+  dispose(): void {
+    this.models.clear();
+    this.customEndpoints.clear();
+    this.customApiKeys.clear();
+    this.isInitialized = false;
+  }
+}
+
+export const aiOrchestrator = AIOrchestrator.getInstance();
+export default aiOrchestrator;
