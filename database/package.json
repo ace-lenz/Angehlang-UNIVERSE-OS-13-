@@ -1,0 +1,15 @@
+{
+  "name": "@angehlang/database",
+  "version": "9.1.0",
+  "description": "Database Studio Package",
+  "main": "./components/DatabaseStudio.tsx",
+  "types": "./types/index.ts",
+  "exports": {
+    ".": "./components/DatabaseStudio.tsx",
+    "./engines": "./engines/index.ts",
+    "./hooks": "./hooks/index.ts"
+  },
+  "dependencies": {
+    "react": "^18.0.0"
+  }
+}
