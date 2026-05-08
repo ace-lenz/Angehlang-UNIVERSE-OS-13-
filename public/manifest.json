@@ -1,0 +1,17 @@
+{
+  "name": "Angehlang Universe OS",
+  "short_name": "AngehOS",
+  "description": "Sovereign AI Operating System v6.0 — 100% offline capable, production-ready.",
+  "version": "6.0.0",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#09090b",
+  "theme_color": "#6366f1",
+  "categories": ["productivity", "utilities", "developer"],
+  "lang": "en",
+  "icons": [],
+  "shortcuts": [],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

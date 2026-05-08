@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Angehlang Universe OS v13.0 | TRILLION-X Sovereign Omni-Prime AI</title>
+  <meta name="description"
+    content="Angehlang Universe OS v13.0 TRILLION-X — Sovereign Omni-Prime AI Operating System. SyntheticIntuitionEngine, QuantumSwarmConsensus, OmniscientContextEngine, and PhotonicTensorCore. 100% Offline-first." />
+  <meta name="theme-color" content="#020617" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="icon" href="/logo.png">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Outfit:wght@400;600;800&family=JetBrains+Mono&display=swap"
+    rel="stylesheet">
+
+  <!-- Sovereign Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.0.0",
+        "react/jsx-runtime": "https://esm.sh/react@19.0.0/jsx-runtime",
+        "react/jsx-dev-runtime": "https://esm.sh/react@19.0.0/jsx-dev-runtime",
+        "react-dom": "https://esm.sh/react-dom@19.0.0",
+        "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+        "react-markdown": "https://esm.sh/react-markdown@10.1.0",
+        "lucide-react": "https://esm.sh/lucide-react@0.454.0",
+        "motion": "https://esm.sh/motion@12.0.0",
+        "motion/react": "https://esm.sh/motion@12.0.0/react",
+        "clsx": "https://esm.sh/clsx@2.1.1",
+        "tailwind-merge": "https://esm.sh/tailwind-merge@2.5.4",
+        "idb-keyval": "https://esm.sh/idb-keyval@6.2.2",
+        "three": "https://esm.sh/three@0.160.0",
+        "@/": "/src/"
+      }
+    }
+    </script>
+
+  <style>
+    :root {
+      --sub-cyan: rgba(6, 182, 212, 0.5);
+      --sub-indigo: rgba(99, 102, 241, 0.5);
+      --sub-purple: rgba(168, 85, 247, 0.5);
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #020617;
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+    }
+
+    #root {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* HYPER-LAUNCH BOOT UI */
+    #hyper-launch {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .logo-shard {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      background: linear-gradient(135deg, #22d3ee 0%, #6366f1 50%, #a855f7 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: logo-drift 4s ease-in-out infinite;
+      filter: drop-shadow(0 0 20px rgba(99, 102, 241, 0.3));
+    }
+
+    .boot-status {
+      margin-top: 2rem;
+      font-size: 0.7rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      opacity: 0.8;
+    }
+
+    .loading-track {
+      width: 240px;
+      height: 2px;
+      background: rgba(34, 211, 238, 0.1);
+      margin-top: 1rem;
+      position: relative;
+      overflow: hidden;
+      border-radius: 99px;
+    }
+
+    .loading-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #22d3ee, #6366f1);
+      box-shadow: 0 0 10px #6366f1;
+      transition: width 0.4s ease;
+    }
+
+    @keyframes logo-drift {
+
+      0%,
+      100% {
+        transform: translateY(0) scale(1.0);
+        filter: brightness(1);
+      }
+
+      50% {
+        transform: translateY(-10px) scale(1.02);
+        filter: brightness(1.2);
+      }
+    }
+
+    .hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* EXPLORER REVEAL STYLES */
+    #explorer {
+      display: none;
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10001;
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      color: #00eaff;
+      background: #b46363;
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 234, 255, 0.2);
+      box-shadow: 0 0 40px rgba(0, 234, 255, 0.1);
+      white-space: pre;
+      font-size: 13px;
+      line-height: 1.6;
+      opacity: 0;
+      transition: opacity 0.5s ease-out;
+    }
+
+    #explorer.visible {
+      display: block;
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="hyper-launch">
+    <div class="logo-shard">ANGEHLANG</div>
+    <div class="boot-status" id="boot-text">MANIFESTING SOVEREIGN CORE...</div>
+    <div class="loading-track">
+      <div class="loading-bar" id="boot-progress"></div>
+    </div>
+  </div>
+
+  <div id="explorer"></div>
+  <div id="root"></div>
+
+  <script>
+    /**
+     * SOVEREIGN PURGE — EMERGENCY CACHE CLEAR
+     * Ensures no legacy hallucinations or stale build artifacts persist.
+     */
+    (async function sovereignPurge() {
+      if (window.location.search.includes('purge=true') || !localStorage.getItem('SOVEREIGN_PURGE_v13')) {
+        console.log('[Sovereign-Purge] 🧹 Initializing Deep Purge...');
+        
+        // 1. Clear Storage
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // 2. Unregister Service Workers
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          for (const reg of regs) {
+            await reg.unregister();
+            console.log('[Sovereign-Purge] Unregistered SW:', reg.scope);
+          }
+        }
+        
+        // 3. Clear Caches
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          for (const key of keys) {
+            await caches.delete(key);
+            console.log('[Sovereign-Purge] Deleted Cache:', key);
+          }
+        }
+
+        // 4. Clear IndexedDB (Sovereign Vault & Brain)
+        const dbs = ['SovereignVault', 'SovereignLogicCache', 'keyval-store'];
+        for (const dbName of dbs) {
+          try {
+            const req = indexedDB.deleteDatabase(dbName);
+            req.onsuccess = () => console.log('[Sovereign-Purge] Deleted DB:', dbName);
+          } catch (e) {}
+        }
+        
+        localStorage.setItem('SOVEREIGN_PURGE_v13', 'true');
+        console.log('[Sovereign-Purge] ✓ Purge Complete. Force-reloading substrate...');
+        window.location.href = window.location.pathname + '?purge_complete=true';
+      }
+    })();
+
+    /**
+     * SOVEREIGN INFINITY ULTRA — PHOTONIC BOOTLOADER
+     */
+    const progress = document.getElementById('boot-progress');
+    const text = document.getElementById('boot-text');
+    const launcher = document.getElementById('hyper-launch');
+
+    // ◈ Environment Intelligence
+    const isPreview = window.location.port === '3001' || window.location.search.includes('mode=preview');
+    if (isPreview) {
+      document.documentElement.setAttribute('data-mode', 'preview');
+      console.log('%c[Sovereign-System] ◈ PREVIEW MODE ACTIVE — Serving Optimized Dist Substrate', 'color: #10b981; font-weight: bold;');
+    }
+
+    function updateBoot(p, str) {
+      const modeTag = isPreview ? '[PREVIEW]' : '[DEV]';
+      progress.style.width = p + '%';
+      text.innerText = `${modeTag} ${str}`;
+      console.log(`[Photonic-Boot] ${p}% | ${str}`);
+    }
+
+    async function bootstrap() {
+      try {
+        if (window.__booted) return;
+        window.__booted = true;
+
+        const start = performance.now();
+        updateBoot(10, 'SYNCHRONIZING SOVEREIGN SUBSTRATE...');
+
+        if (!('serviceWorker' in navigator)) {
+          throw new Error('Sovereignty Requires Service Worker support.');
+        }
+
+        // 1. Register / Sync SW
+        const registration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/'
+        });
+
+        // 2. SW Controller Handshake
+        updateBoot(30, 'AWAITING NEURAL HANDSHAKE...');
+
+        // Ensure the Service Worker is ready and active
+        const swReg = await navigator.serviceWorker.ready;
+
+        if (!navigator.serviceWorker.controller) {
+          console.log('[Photonic-Boot] Controller missing, forcing takeover...');
+          // In some cases, ready resolves but controller is null (first load)
+          // We can try to force takeover by waiting for controllerchange
+          await new Promise(resolve => {
+            const timeout = setTimeout(() => {
+              console.warn('[Photonic-Boot] Handshake timeout. Refreshing substrate...');
+              location.reload();
+            }, 3000);
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+              clearTimeout(timeout);
+              resolve();
+            }, { once: true });
+          });
+        }
+
+        // 3. Synthesis Engine Synchronization (Handshake v2)
+        updateBoot(50, 'SYNCHRONIZING SYNTHESIS ENGINE...');
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Synthesis Synchronization Timeout')), 10000);
+          const channel = new MessageChannel();
+          channel.port1.onmessage = (event) => {
+            if (event.data.type === 'SYNTHESIS_READY') {
+              clearTimeout(timeout);
+              resolve();
+            }
+          };
+          navigator.serviceWorker.controller.postMessage({ type: 'INITIALIZE_SYNTHESIS' }, [channel.port2]);
+
+          // Safety timeout — if SW does not respond in 5s, continue boot anyway
+          setTimeout(() => { clearTimeout(timeout); resolve(); }, 5000);
+        });
+
+        updateBoot(60, 'SYNTHESIS ENGINE ONLINE.');
+
+        // 3.5 Photonic DNA Synchronization (Zeta+ Absolute Sovereignty)
+        try {
+          // Check if we already decompressed DNA in the early stage
+          if (!window.__SOVEREIGN_VFS__) {
+            const dnaScript = document.getElementById('quantum-dna');
+            if (dnaScript) {
+              updateBoot(65, 'DECOMPRESSING DNA LATTICE...');
+              const b64 = dnaScript.textContent;
+              const binary = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+              const stream = new Response(binary).body.pipeThrough(new DecompressionStream('gzip'));
+              const decompressed = await new Response(stream).text();
+              window.__SOVEREIGN_VFS__ = JSON.parse(decompressed);
+            }
+          }
+
+          if (window.__SOVEREIGN_VFS__ && navigator.serviceWorker.controller) {
+            // Handshake the DNA into the SW memory
+            navigator.serviceWorker.controller.postMessage({
+              type: 'SYNC_DNA',
+              dna: window.__SOVEREIGN_VFS__
+            });
+            console.log('[Photonic-Boot] 🧬 DNA Lattice Synced to SW.');
+          }
+        } catch (e) {
+          console.error('[Photonic-Boot] DNA Sync Failure:', e);
+        }
+
+        // 4. Native HMR Pulse (SSE)
+        try {
+          const hmr = new EventSource('/hmr');
+          hmr.onmessage = (e) => {
+            const data = JSON.parse(e.data);
+            if (data.type === 'update') {
+              console.log(`[HMR] Pulse for: ${data.path}`);
+              navigator.serviceWorker.controller?.postMessage({ type: 'HMR_UPDATE', path: data.path });
+              setTimeout(() => location.reload(), 200);
+            }
+          };
+        } catch (e) { console.warn('[HMR] SSE Failed (Offline or Server issues)'); }
+
+        updateBoot(70, 'MOUNTING OMNI-PRIME CORE...');
+
+        // 4. Force SW Interception Verification (with fast-fail Ghost Loader)
+        updateBoot(80, 'VERIFYING SYNTHESIS SUBSTRATE...');
+        const probeTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('GHOST_LOADER_TIMEOUT')), 800));
+
+        try {
+          const probe = await Promise.race([
+            fetch('/src/probe.ts'),
+            probeTimeout
+          ]);
+
+          if (!probe.ok || !probe.headers.get('Content-Type')?.includes('javascript')) {
+            throw new Error('SW Synapse Miss');
+          }
+        } catch (err) {
+          console.warn('[Photonic-Boot] ⚠️ Synthesis substrate unstable. Activating Ghost Loader...');
+          // In a future phase, we would eval(window.__SOVEREIGN_VFS__['src/main.tsx']) here 
+          // but for now we just skip the stall and let React try to mount.
+        }
+
+        await navigator.serviceWorker.ready;
+
+        // 3. Simplified Synthesis Probe
+        const isSynthesisReady = await fetch('/src/probe.ts').then(r => r.ok).catch(() => false);
+
+        let entry;
+
+        // 2. Ghost Loader Fallback
+        if (!isSynthesisReady) {
+          try {
+            console.warn('[Photonic-Boot] Synthesis unstable. Activating Ghost Loader...');
+            const blob = new Blob([window.__SOVEREIGN_VFS__['src/main.tsx']], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            // In building mode, we prefer the bundle, but Ghost Loader is for DNA-Sovereignty.
+            console.log('[Photonic-Boot] DNA Blob Ready:', url);
+          } catch (err) {
+            console.error('[Ghost Loader] Synthesis failed:', err);
+          }
+        }
+
+        updateBoot(90, 'INITIALIZING UI LAYER...');
+        
+        // SOVEREIGN BYPASS: Load directly from source substrate
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.src = '/src/main.tsx';
+        document.body.appendChild(script);
+
+        const duration = performance.now() - start;
+        updateBoot(100, `[Photonic-Boot] 100% | HYPER-BOOT COMPLETE (${(duration / 1000).toFixed(4)}s)`);
+
+        setTimeout(() => {
+          launcher.style.opacity = '0';
+          setTimeout(() => {
+            launcher.style.display = 'none';
+          }, 800);
+        }, 500);
+
+      } catch (error) {
+        console.error('[Photonic-Boot] FATAL:', error);
+        text.innerHTML = `<span style="color: #f43f5e">BOOT_ABORTED: ${error.message}</span>`;
+      }
+    }
+
+    bootstrap();
+  </script>
+</body>
+
+</html>

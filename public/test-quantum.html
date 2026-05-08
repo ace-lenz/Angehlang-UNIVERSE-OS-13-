@@ -1,0 +1,132 @@
+/**
+ * ⚛️ Quantum Processing Test - Run in Browser Console
+ * Open browser dev tools (F12) and paste this in the console
+ */
+
+(async () => {
+  console.log('%c⚛️ ANGEHLANG QUANTUM PROCESSING TEST ⚛️', 'color: #a855f7; font-size: 16px; font-weight: bold');
+  console.log('');
+
+  try {
+    // Import the QPPUCore
+    const { qppuEngine } = await import('./engine/QPPUCore');
+    
+    let passed = 0;
+    let failed = 0;
+
+    // Test 1: Gate Matrices
+    console.log('%c[TEST 1] Gate Matrices', 'color: #f59e0b; font-weight: bold');
+    const gates = qppuEngine.getGateMatrices();
+    console.log(`  Gates: ${gates.join(', ')}`);
+    if (gates.length >= 8) {
+      console.log('%c  ✓ PASSED', 'color: #10b981');
+      passed++;
+    } else {
+      console.log('%c  ✗ FAILED', 'color: #f43f5e');
+      failed++;
+    }
+
+    // Test 2: Bell State
+    console.log('%c[TEST 2] Bell State (Entanglement)', 'color: #f59e0b; font-weight: bold');
+    const bell = qppuEngine.createBellState(0, 1, 2);
+    console.log(`  Measurement: |${bell.measurement}⟩`);
+    console.log(`  Coherence: ${(bell.coherence * 100).toFixed(2)}%`);
+    if (bell.entanglementPairs.length > 0) {
+      console.log('%c  ✓ PASSED', 'color: #10b981');
+      passed++;
+    } else {
+      console.log('%c  ✗ FAILED', 'color: #f43f5e');
+      failed++;
+    }
+
+    // Test 3: State Vector
+    console.log('%c[TEST 3] Superposition State', 'color: #f59e0b; font-weight: bold');
+    const state = qppuEngine.getStateVector(4);
+    console.log(`  Qubits: 4, States: ${state.length}`);
+    console.log(`  |${state[0]?.basisState}⟩ = ${state[0]?.amplitudeReal.toFixed(4)}`);
+    if (state.length >= 4) {
+      console.log('%c  ✓ PASSED', 'color: #10b981');
+      passed++;
+    } else {
+      console.log('%c  ✗ FAILED', 'color: #f43f5e');
+      failed++;
+    }
+
+    // Test 4: Grover's Search
+    console.log('%c[TEST 4] Grover Search', 'color: #f59e0b; font-weight: bold');
+    const grover = qppuEngine.groverSearch(16, 5, 2);
+    console.log(`  N=16, iterations=2`);
+    console.log(`  Result: |${grover.measurement}⟩`);
+    if (grover.measurement) {
+      console.log('%c  ✓ PASSED', 'color: #10b981');
+      passed++;
+    } else {
+      console.log('%c  ✗ FAILED', 'color: #f43f5e');
+      failed++;
+    }
+
+    // Test 5: QFT
+    console.log('%c[TEST 5] Quantum Fourier Transform', 'color: #f59e0b; font-weight: bold');
+    const qft = qppuEngine.quantumFourierTransform(4);
+    console.log(`  Gates: ${qft.gateOperations.length}`);
+    console.log(`  Coherence: ${(qft.coherence * 100).toFixed(2)}%`);
+    if (qft.gateOperations.length > 0) {
+      console.log('%c  ✓ PASSED', 'color: #10b981');
+      passed++;
+    } else {
+      console.log('%c  ✗ FAILED', 'color: #f43f5e');
+      failed++;
+    }
+
+    // Test 6: VQE
+    console.log('%c[TEST 6] VQE Molecular Simulation', 'color: #f59e0b; font-weight: bold');
+    const vqe = qppuEngine.vqeSimulation('H2', 4);
+    console.log(`  Molecule: H2`);
+    console.log(`  Energy: ${vqe.energy.toFixed(4)} Hartree`);
+    if (vqe.energy) {
+      console.log('%c  ✓ PASSED', 'color: #10b981');
+      passed++;
+    } else {
+      console.log('%c  ✗ FAILED', 'color: #f43f5e');
+      failed++;
+    }
+
+    // Test 7: QAOA
+    console.log('%c[TEST 7] QAOA Optimization', 'color: #f59e0b; font-weight: bold');
+    const qaoa = qppuEngine.qaoaSolve('MAXCUT', 3);
+    console.log(`  Problem: ${qaoa.solution}`);
+    console.log(`  Objective: ${qaoa.objectiveValue}`);
+    if (qaoa.solution) {
+      console.log('%c  ✓ PASSED', 'color: #10b981');
+      passed++;
+    } else {
+      console.log('%c  ✗ FAILED', 'color: #f43f5e');
+      failed++;
+    }
+
+    // Test 8: Deutsch-Jozsa
+    console.log('%c[TEST 8] Deutsch-Jozsa', 'color: #f59e0b; font-weight: bold');
+    const dj = qppuEngine.deutschJozsa(true, 3);
+    console.log(`  Result: ${dj.result}`);
+    console.log(`  Speedup: ${dj.complexity}`);
+    if (dj.result) {
+      console.log('%c  ✓ PASSED', 'color: #10b981');
+      passed++;
+    } else {
+      console.log('%c  ✗ FAILED', 'color: #f43f5e');
+      failed++;
+    }
+
+    // Summary
+    console.log('');
+    console.log('%c═══════════════════════════════════', 'color: #06b6d4; font-weight: bold');
+    console.log(`%c   RESULTS: ${passed}/${passed+failed} PASSED`, 'color: ${failed === 0 ? '#10b981' : '#f43f5e'}; font-size: 14px; font-weight: bold');
+    console.log('%c═══════════════════════════════════', 'color: #06b6d4; font-weight: bold');
+
+    return { passed, failed };
+
+  } catch (e) {
+    console.error('Test error:', e);
+    return { passed: 0, failed: 1 };
+  }
+})();

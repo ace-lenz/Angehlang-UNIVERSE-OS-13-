@@ -1,0 +1,5 @@
+{
+  "name": "Angehlang Universe OS",
+  "description": "Next-generation local intelligence interface.",
+  "requestFramePermissions": ["microphone", "camera", "geolocation"]
+}

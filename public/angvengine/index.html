@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANGV Engine | Lightspeed A2A Access</title>
+  <meta name="description" content="Zero-login Swarm Search and ANGV Compute Engine via Web3 & A2A limits." />
+  <style>
+    :root {
+      --bg: #09090b;
+      --glow: #8b5cf6;
+      --text: #e4e4e7;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .container {
+      max-width: 42rem;
+      width: 100%;
+      padding: 2rem;
+      text-align: center;
+      position: relative;
+      z-index: 10;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #a78bfa;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    }
+    h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      margin: 0 0 1rem 0;
+      letter-spacing: -0.05em;
+      background: linear-gradient(to right, #fff, #a78bfa);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+    }
+    p {
+      color: #a1a1aa;
+      font-size: 1.125rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      max-width: 500px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .search-box {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(24, 24, 27, 0.8);
+      border: 1px solid #27272a;
+      padding: 0.5rem;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+    .search-box:focus-within {
+      border-color: var(--glow);
+      box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+    }
+    input {
+      flex: 1;
+      background: none;
+      border: none;
+      color: white;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      outline: none;
+    }
+    input::placeholder {
+      color: #52525b;
+    }
+    button {
+      background: var(--glow);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    button:hover {
+      background: #7c3aed;
+      transform: scale(1.05);
+    }
+    .bg-elements {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .circle {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, rgba(0,0,0,0) 70%);
+    }
+    #results {
+      margin-top: 2rem;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .result-card {
+      background: rgba(24, 24, 27, 0.5);
+      border: 1px solid rgba(63, 63, 70, 0.5);
+      padding: 1rem;
+      border-radius: 8px;
+      animation: fadeUp 0.4s ease forwards;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .result-card h3 {
+      color: #a78bfa;
+      margin: 0 0 0.5rem 0;
+      font-size: 1.1rem;
+    }
+    .result-card p {
+      color: #a1a1aa;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-elements">
+    <div class="circle" style="width: 600px; height: 600px; top: 10%; left: 20%;"></div>
+    <div class="circle" style="width: 800px; height: 800px; bottom: -10%; right: 10%; background: radial-gradient(circle, rgba(16,185,129,0.1) 0%, rgba(0,0,0,0) 70%);"></div>
+  </div>
+
+  <div class="container">
+    <div class="badge">Zero-Login A2A Swarm</div>
+    <h1>ANGV Engine</h1>
+    <p>A lightspeed, sovereign A2A search pipeline. No formalities. No login required. Harness the Swarm directly from any platform.</p>
+    
+    <div class="search-box">
+      <input type="text" id="queryInput" placeholder="Initialize Swarm Search Query..." onkeydown="if(event.key === 'Enter') exeSearch()">
+      <button onclick="exeSearch()">Launch</button>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+  <script>
+    function exeSearch() {
+      const q = document.getElementById('queryInput').value;
+      if(!q) return;
+
+      const resDiv = document.getElementById('results');
+      resDiv.innerHTML = '<div style="color: #8b5cf6; text-align: center; font-family: monospace;">[A2A Swarm] Initiating Google/DDG Photonic Seek...</div>';
+
+      // Simulate a lightspeed API response since there's no backend
+      setTimeout(() => {
+        resDiv.innerHTML = `
+          <div class="result-card" style="animation-delay: 0.1s">
+            <h3>Swarm Analysis on: ${q}</h3>
+            <p>Accessing global indexed memory. Simulated A2A response from Sovereign Nexus. This point serves as the Zero-Login bridge for real-time inference.</p>
+          </div>
+          <div class="result-card" style="animation-delay: 0.2s">
+            <h3>External Agent Dispatch</h3>
+            <p>Searching Google / DuckDuckGo equivalents via decentralized A2A protocols inside the ANGV Framework... [LIGHTSPEED CACHE HIT]</p>
+          </div>
+        `;
+      }, 800);
+    }
+  </script>
+</body>
+</html>
